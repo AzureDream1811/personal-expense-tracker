@@ -1,75 +1,88 @@
--- Mock data for Expense Tracker (PostgreSQL)
--- Development/testing only. Run against an EMPTY database.
--- Explicit IDs are used, so do not run this against existing application data.
+-- =============================================
+-- 1. USERS
+-- =============================================
 
-BEGIN;
+INSERT INTO users (username, email, created_at, deleted_at)
+VALUES
+    ('alice', 'alice@example.com', CURRENT_TIMESTAMP, NULL),
+    ('bob', 'bob@example.com', CURRENT_TIMESTAMP, NULL),
+    ('charlie', 'charlie@example.com', CURRENT_TIMESTAMP, NULL),
+    ('david', 'david@example.com', CURRENT_TIMESTAMP, NULL),
+    ('emma', 'emma@example.com', CURRENT_TIMESTAMP, NULL);
 
-INSERT INTO users (id, username, email, created_at, deleted_at) VALUES
-(1, 'alice',   'alice@example.com',   '2026-01-01 08:00:00', NULL),
-(2, 'bob',     'bob@example.com',     '2026-01-02 08:00:00', NULL),
-(3, 'charlie', 'charlie@example.com', '2026-01-03 08:00:00', NULL),
-(4, 'diana',   'diana@example.com',   '2026-01-04 08:00:00', NULL),
-(5, 'ethan',   'ethan@example.com',   '2026-01-05 08:00:00', NULL);
 
-INSERT INTO categories (id, name, description, created_at, deleted_at) VALUES
-(1,  'Food',          'Meals, groceries, and drinks',            '2026-01-01 09:00:00', NULL),
-(2,  'Transportation','Fuel, public transport, and ride-hailing','2026-01-01 09:00:00', NULL),
-(3,  'Shopping',      'Clothing and personal purchases',         '2026-01-01 09:00:00', NULL),
-(4,  'Education',     'Books, courses, and learning materials', '2026-01-01 09:00:00', NULL),
-(5,  'Entertainment', 'Movies, games, and leisure activities',  '2026-01-01 09:00:00', NULL),
-(6,  'Healthcare',    'Medicine and healthcare services',       '2026-01-01 09:00:00', NULL),
-(7,  'Utilities',     'Electricity, water, and internet',        '2026-01-01 09:00:00', NULL),
-(8,  'Housing',       'Rent and household expenses',             '2026-01-01 09:00:00', NULL),
-(9,  'Travel',        'Trips and accommodation',                 '2026-01-01 09:00:00', NULL),
-(10, 'Gifts',         'Gifts and donations',                      '2026-01-01 09:00:00', '2026-10-15 12:00:00');
+-- =============================================
+-- 2. CATEGORIES
+-- =============================================
 
--- Generate 200 deterministic expenses across 5 users and 10 categories.
--- Four expenses are soft-deleted. Some historical expenses still reference
--- category 10, which is soft-deleted but must remain available for history.
-INSERT INTO expenses
-    (id, amount, description, expense_date, created_at, updated_at, deleted_at, user_id, category_id)
+INSERT INTO categories (name, description, created_at, deleted_at, user_id)
 SELECT
-    n,
-    (10000 + ((n * 7919) % 490000))::numeric(12,2),
-    CASE (n % 8)
-        WHEN 0 THEN 'Lunch with friends'
-        WHEN 1 THEN 'Monthly grocery shopping'
-        WHEN 2 THEN 'Bus and metro fare'
-        WHEN 3 THEN 'Online purchase'
-        WHEN 4 THEN 'Course or learning material'
-        WHEN 5 THEN 'Coffee and snacks'
-        WHEN 6 THEN 'Household payment'
-        ELSE 'Personal expense'
+    c.name,
+    c.description,
+    CURRENT_TIMESTAMP,
+    NULL,
+    u.id
+FROM users u
+CROSS JOIN (
+    VALUES
+        ('Food', 'Food and groceries'),
+        ('Transportation', 'Travel and transportation'),
+        ('Shopping', 'Personal and household purchases'),
+        ('Entertainment', 'Movies, games and leisure'),
+        ('Bills', 'Utilities and recurring bills')
+) AS c(name, description)
+WHERE u.username IN ('alice', 'bob', 'charlie', 'david', 'emma');
+
+
+-- =============================================
+-- 3. EXPENSES
+-- =============================================
+
+WITH expense_data AS (
+    SELECT
+        u.id AS user_id,
+        n AS expense_number,
+        ((n - 1) % 5) + 1 AS category_number
+    FROM users u
+    CROSS JOIN generate_series(1, 40) AS gs(n)
+    WHERE u.username IN ('alice', 'bob', 'charlie', 'david', 'emma')
+)
+INSERT INTO expenses (
+    amount,
+    description,
+    expense_date,
+    created_at,
+    updated_at,
+    deleted_at,
+    user_id,
+    category_id
+)
+SELECT
+    (10000 + (e.expense_number * 1379) % 490000)::NUMERIC(12, 2),
+
+    CASE e.category_number
+        WHEN 1 THEN 'Food expense'
+        WHEN 2 THEN 'Transportation expense'
+        WHEN 3 THEN 'Shopping expense'
+        WHEN 4 THEN 'Entertainment expense'
+        ELSE 'Monthly bill'
     END,
-    DATE '2026-01-01' + ((n * 37) % 303)::integer,
-    TIMESTAMP '2026-01-01 10:00:00' + (n * INTERVAL '2 hours'),
-    TIMESTAMP '2026-01-01 10:00:00' + (n * INTERVAL '2 hours'),
-    CASE
-        WHEN n IN (47, 94, 141, 188)
-            THEN TIMESTAMP '2026-10-20 12:00:00'
-        ELSE NULL
-    END,
-    ((n - 1) % 5) + 1,
-    ((n - 1) % 10) + 1
-FROM generate_series(1, 200) AS series(n);
 
--- Synchronize identity/serial sequences after inserting explicit IDs.
-SELECT setval(
-    pg_get_serial_sequence('users', 'id'),
-    COALESCE((SELECT MAX(id) FROM users), 1),
-    true
-);
+    DATE '2026-01-01' + ((e.expense_number * 7) % 303),
 
-SELECT setval(
-    pg_get_serial_sequence('categories', 'id'),
-    COALESCE((SELECT MAX(id) FROM categories), 1),
-    true
-);
+    CURRENT_TIMESTAMP,
+    NULL,
+    NULL,
+    e.user_id,
+    c.id
 
-SELECT setval(
-    pg_get_serial_sequence('expenses', 'id'),
-    COALESCE((SELECT MAX(id) FROM expenses), 1),
-    true
-);
-
-COMMIT;
+FROM expense_data e
+JOIN categories c
+    ON c.user_id = e.user_id
+    AND c.name = CASE e.category_number
+        WHEN 1 THEN 'Food'
+        WHEN 2 THEN 'Transportation'
+        WHEN 3 THEN 'Shopping'
+        WHEN 4 THEN 'Entertainment'
+        ELSE 'Bills'
+    END;

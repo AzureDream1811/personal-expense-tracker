@@ -32,7 +32,7 @@ public class ExpenseService {
     @Transactional
     public ExpenseResponse createExpense(Long userId, ExpenseRequest expenseRequest) {
         User user = getUserById(userId);
-        Category category = getCategoryById(expenseRequest.categoryId());
+        Category category = getCategoryById(userId, expenseRequest.categoryId());
 
         Expense expense = Expense.builder()
                 .amount(expenseRequest.amount())
@@ -87,7 +87,7 @@ public class ExpenseService {
         }
 
         if (expenseRequest.categoryId() != null) {
-            Category category = getCategoryById(expenseRequest.categoryId());
+            Category category = getCategoryById(userId, expenseRequest.categoryId());
             expense.setCategory(category);
         }
 
@@ -107,8 +107,8 @@ public class ExpenseService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
     }
 
-    private Category getCategoryById(Long categoryId) {
-        return categoryRepository.findByIdAndDeletedAtIsNull(categoryId)
+    private Category getCategoryById(Long userId, Long categoryId) {
+        return categoryRepository.findByIdAndUser_IdAndDeletedAtIsNull(categoryId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + categoryId));
     }
 

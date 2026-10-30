@@ -8,7 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.azure.expensetracker.entity.Category;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
-    Optional<Category> findByIdAndDeletedAtIsNull(Long id);
+    Optional<Category> findByIdAndUser_IdAndDeletedAtIsNull(Long categoryId, Long userId);
 
-    List<Category> findAllByDeletedAtIsNull();
+    List<Category> findAllByUser_IdAndDeletedAtIsNull(Long userId);
+
+    boolean existsByUser_IdAndNameAndDeletedAtIsNull(Long userId, String name);
 }
