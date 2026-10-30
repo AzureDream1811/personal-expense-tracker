@@ -47,8 +47,8 @@ public class ExpenseService {
     }
 
     @Transactional(readOnly = true)
-    public ExpenseResponse getExpenseById(Long  userId, Long id) {
-        Expense expense = expenseRepository.findByIdAndUserIdWithCategory(id, userId)
+    public ExpenseResponse getExpenseById(Long userId, Long id) {
+        Expense expense = expenseRepository.findByIdAndUser_IdAndDeletedAtIsNull(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with ID: " + id));
 
         return mapToExpenseResponse(expense);
@@ -57,7 +57,7 @@ public class ExpenseService {
     @Transactional(readOnly = true)
     public List<ExpenseResponse> getAllExpenses() {
 
-        return expenseRepository.findAllWithCategory()
+        return expenseRepository.findAllByDeletedAtIsNull()
                 .stream()
                 .map(this::mapToExpenseResponse)
                 .toList();
@@ -71,7 +71,7 @@ public class ExpenseService {
 
     @Transactional
     public ExpenseResponse updateExpense(Long userId, Long id, ExpensePatchRequest expenseRequest) {
-        Expense expense = expenseRepository.findByIdAndUserIdWithCategory(id, userId)
+        Expense expense = expenseRepository.findByIdAndUser_IdAndDeletedAtIsNull(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with ID: " + id));
 
         if (expenseRequest.amount() != null) {
@@ -96,7 +96,7 @@ public class ExpenseService {
 
     @Transactional
     public void deleteExpense(Long userId, Long id) {
-        Expense expense = expenseRepository.findByIdAndUserIdWithCategory(id, userId)
+        Expense expense = expenseRepository.findByIdAndUser_IdAndDeletedAtIsNull(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with ID: " + id));
 
         expense.setDeletedAt(LocalDateTime.now());

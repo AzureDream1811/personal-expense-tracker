@@ -7,45 +7,24 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 import com.azure.expensetracker.entity.Expense;
 
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
-        @Query("""
-                SELECT e
-                FROM Expense e
-                JOIN FETCH e.category
-                WHERE e.id = :id
-                AND e.deletedAt IS NULL
-                """)
-        Optional<Expense> findByIdWithCategory(@Param("id") Long id);
+        @EntityGraph(attributePaths = "category")
+        Optional<Expense> findByIdAndDeletedAtIsNull(Long id);
 
-        @Query("""
-                SELECT e
-                FROM Expense e
-                JOIN FETCH e.category
-                WHERE e.deletedAt IS NULL
-                """)
-        List<Expense> findAllWithCategory();
+        @EntityGraph(attributePaths = "category")
+        List<Expense> findAllByDeletedAtIsNull();
 
-        @EntityGraph(attributePaths = { "category" })
-        Page<Expense> findByUser_IdAndDeletedAtIsNull(Long userId, Pageable pageable);
+        @EntityGraph(attributePaths = "category")
+        Page<Expense> findByUser_IdAndDeletedAtIsNull(
+                        Long userId,
+                        Pageable pageable);
 
-        Optional<Expense> findByIdAndUser_IdAndDeletedAtIsNull(Long id, Long userId);
-
-        @Query("""
-                SELECT e
-                FROM Expense e
-                JOIN FETCH e.category
-                WHERE e.id = :id
-                AND e.user.id = :userId
-                AND e.deletedAt IS NULL
-                """)
-        Optional<Expense> findByIdAndUserIdWithCategory(
-                        @Param("id") Long id,
-                        @Param("userId") Long userId);
-
+        @EntityGraph(attributePaths = "category")
+        Optional<Expense> findByIdAndUser_IdAndDeletedAtIsNull(
+                        Long id,
+                        Long userId);
 }
