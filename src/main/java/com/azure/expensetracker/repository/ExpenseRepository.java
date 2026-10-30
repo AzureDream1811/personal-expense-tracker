@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.azure.expensetracker.entity.Expense;
 
@@ -18,17 +19,21 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
                         FROM Expense e
                         JOIN FETCH e.category
                         WHERE e.id = :id
+                        AND e.deletedAt IS NULL
                         """)
-        Optional<Expense> findByIdWithCategory(Long id);
+        Optional<Expense> findByIdWithCategory(@Param("id") Long id);
 
         @Query("""
                         SELECT e
                         FROM Expense e
                         JOIN FETCH e.category
+                        WHERE e.deletedAt IS NULL
                         """)
         List<Expense> findAllWithCategory();
 
         @EntityGraph(attributePaths = { "category" })
-        Page<Expense> findByUser_Id(Long userId, Pageable pageable);
+        Page<Expense> findByUser_IdAndDeletedAtIsNull(Long userId, Pageable pageable);
+
+        Optional<Expense> findByIdAndDeletedAtIsNull(Long id);
 
 }

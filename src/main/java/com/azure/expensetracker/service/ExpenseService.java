@@ -1,5 +1,6 @@
 package com.azure.expensetracker.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -47,7 +48,7 @@ public class ExpenseService {
 
     @Transactional(readOnly = true)
     public ExpenseResponse getExpenseById(Long id) {
-        Expense expense = expenseRepository.findByIdWithCategory(id)
+        Expense expense = expenseRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with ID: " + id));
 
         return mapToExpenseResponse(expense);
@@ -64,13 +65,13 @@ public class ExpenseService {
 
     @Transactional(readOnly = true)
     public Page<ExpenseResponse> getExpensesByUserId(Long userId, Pageable pageable) {
-        return expenseRepository.findByUser_Id(userId, pageable)
+        return expenseRepository.findByUser_IdAndDeletedAtIsNull(userId, pageable)
                 .map(this::mapToExpenseResponse);
     }
 
     @Transactional
     public ExpenseResponse updateExpense(Long id, ExpensePatchRequest expenseRequest) {
-        Expense expense = expenseRepository.findById(id)
+        Expense expense = expenseRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with ID: " + id));
 
         if (expenseRequest.amount() != null) {
@@ -95,19 +96,19 @@ public class ExpenseService {
 
     @Transactional
     public void deleteExpense(Long id) {
-        Expense expense = expenseRepository.findById(id)
+        Expense expense = expenseRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with ID: " + id));
 
-        expenseRepository.delete(expense);
+        expense.setDeletedAt(LocalDateTime.now());
     }
 
     private User getUserById(Long userId) {
-        return userRepository.findById(userId)
+        return userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
     }
 
     private Category getCategoryById(Long categoryId) {
-        return categoryRepository.findById(categoryId)
+        return categoryRepository.findByIdAndDeletedAtIsNull(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + categoryId));
     }
 
