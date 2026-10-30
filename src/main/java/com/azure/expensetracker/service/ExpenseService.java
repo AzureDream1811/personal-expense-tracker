@@ -47,8 +47,8 @@ public class ExpenseService {
     }
 
     @Transactional(readOnly = true)
-    public ExpenseResponse getExpenseById(Long id) {
-        Expense expense = expenseRepository.findByIdAndDeletedAtIsNull(id)
+    public ExpenseResponse getExpenseById(Long  userId, Long id) {
+        Expense expense = expenseRepository.findByIdAndUserIdWithCategory(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with ID: " + id));
 
         return mapToExpenseResponse(expense);
@@ -70,8 +70,8 @@ public class ExpenseService {
     }
 
     @Transactional
-    public ExpenseResponse updateExpense(Long id, ExpensePatchRequest expenseRequest) {
-        Expense expense = expenseRepository.findByIdAndDeletedAtIsNull(id)
+    public ExpenseResponse updateExpense(Long userId, Long id, ExpensePatchRequest expenseRequest) {
+        Expense expense = expenseRepository.findByIdAndUserIdWithCategory(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with ID: " + id));
 
         if (expenseRequest.amount() != null) {
@@ -95,8 +95,8 @@ public class ExpenseService {
     }
 
     @Transactional
-    public void deleteExpense(Long id) {
-        Expense expense = expenseRepository.findByIdAndDeletedAtIsNull(id)
+    public void deleteExpense(Long userId, Long id) {
+        Expense expense = expenseRepository.findByIdAndUserIdWithCategory(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with ID: " + id));
 
         expense.setDeletedAt(LocalDateTime.now());
