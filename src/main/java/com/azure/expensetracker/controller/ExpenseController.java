@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.azure.expensetracker.dto.request.ExpenseFilterRequest;
 import com.azure.expensetracker.dto.request.ExpensePatchRequest;
 import com.azure.expensetracker.dto.request.ExpenseRequest;
 import com.azure.expensetracker.dto.response.ExpenseResponse;
@@ -65,4 +67,12 @@ public class ExpenseController {
         expenseService.deleteExpense(userId, id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/filter")
+    public ResponseEntity<Page<ExpenseResponse>> filterExpenses(
+            @RequestParam Long userId,
+            @ModelAttribute ExpenseFilterRequest filter, Pageable pageable) {
+        return ResponseEntity.ok(expenseService.filterExpenses(userId, filter, pageable));
+    }
+
 }

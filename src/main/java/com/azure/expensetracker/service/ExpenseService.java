@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.azure.expensetracker.dto.request.ExpenseFilterRequest;
 import com.azure.expensetracker.dto.request.ExpensePatchRequest;
 import com.azure.expensetracker.dto.request.ExpenseRequest;
 import com.azure.expensetracker.dto.response.ExpenseResponse;
@@ -100,6 +101,21 @@ public class ExpenseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with ID: " + id));
 
         expense.setDeletedAt(LocalDateTime.now());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ExpenseResponse> filterExpenses(
+        Long userId, ExpenseFilterRequest filter, Pageable pageable) {
+        return expenseRepository.findByUserIdAndFilters(
+                userId,
+                filter.categoryId(),
+                filter.startDate(),
+                filter.endDate(),
+                filter.minAmount(),
+                filter.maxAmount(),
+                filter.description(),
+                pageable)
+                .map(this::mapToExpenseResponse);
     }
 
     private User getUserById(Long userId) {
