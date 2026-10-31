@@ -4,7 +4,7 @@ import java.time.LocalDate;
 
 import jakarta.validation.constraints.NotNull;
 
-public record StatisticsEsponseSummaryRequest(
+public record ExpenseSummaryRequest(
     @NotNull
     LocalDate startDate,
     @NotNull 
