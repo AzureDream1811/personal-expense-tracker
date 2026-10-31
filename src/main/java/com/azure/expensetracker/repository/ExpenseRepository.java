@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.azure.expensetracker.dto.response.CategoryExpenseResponse;
 import com.azure.expensetracker.dto.response.ExpenseSummaryResponse;
 import com.azure.expensetracker.entity.Expense;
 
@@ -34,7 +35,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpec
                         Long userId);
 
         @Query("""
-                        SELECT new com.azure.expensetracker.dto.response.StatisticsEsponseSummaryResponse(
+                        SELECT new com.azure.expensetracker.dto.response.ExpenseSummaryResponse(
                         COALESCE(SUM(e.amount), 0),
                         COALESCE(COUNT(e.id), 0),
                         COALESCE(AVG(e.amount), 0.0)
@@ -46,6 +47,25 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpec
                                 AND e.deletedAt IS NULL
                         """)
         ExpenseSummaryResponse getExpenseSummary(
+                        @Param("userId") Long userId,
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate);
+
+        @Query("""
+                        SELECT new com.azure.expensetracker.dto.response.CategoryExpenseResponse(
+                                e.category.id,
+                                e.category.name,
+                                COALESCE(SUM(e.amount), 0),
+                                COALESCE(COUNT(e.id), 0)
+                        )
+                        FROM Expense e
+                        WHERE e.user.id = :userId
+                                AND e.expenseDate >= :startDate
+                                AND e.expenseDate <= :endDate
+                                AND e.deletedAt IS NULL
+                        GROUP BY e.category.id, e.category.name
+                        """)
+        List<CategoryExpenseResponse> getCategoryExpense(
                         @Param("userId") Long userId,
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate);
