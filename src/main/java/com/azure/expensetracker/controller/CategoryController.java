@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.azure.expensetracker.dto.request.CategoryRequest;
@@ -28,31 +29,38 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @PostMapping
-    public ResponseEntity<CategoryResponse> createCategory(@PathVariable Long userId,
+    public ResponseEntity<CategoryResponse> createCategory(
+            @RequestParam Long userId,
             @RequestBody CategoryRequest categoryRequest) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(categoryService.createCategory(userId, categoryRequest));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<CategoryResponse> getCategoryById(@PathVariable Long userId, @PathVariable Long id) {
-        return ResponseEntity.ok(categoryService.getCategoryById(userId, id));
+    @GetMapping("/{categoryId}")
+    public ResponseEntity<CategoryResponse> getCategoryById(
+            @RequestParam Long userId,
+            @PathVariable Long categoryId) {
+        return ResponseEntity.ok(categoryService.getCategoryById(userId, categoryId));
     }
 
     @GetMapping
-    public ResponseEntity<List<CategoryResponse>> getAllCategories(@PathVariable Long userId) {
+    public ResponseEntity<List<CategoryResponse>> getAllCategories(
+            @RequestParam Long userId) {
         return ResponseEntity.ok(categoryService.getAllCategories(userId));
     }
 
-    @PatchMapping("/{id}")
+    @PatchMapping("/{categoryId}")
     public ResponseEntity<CategoryResponse> updateCategory(
-            @PathVariable Long userId, @PathVariable Long categoryId,
+            @RequestParam Long userId,
+            @PathVariable Long categoryId,
             @Valid @RequestBody CategoryRequest categoryRequest) {
         return ResponseEntity.ok(categoryService.updateCategory(userId, categoryId, categoryRequest));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCategory(@PathVariable Long userId, @PathVariable Long categoryId) {
+    @DeleteMapping("/{categoryId}")
+    public ResponseEntity<Void> deleteCategory(
+            @RequestParam Long userId,
+            @PathVariable Long categoryId) {
         categoryService.deleteCategory(categoryId, userId);
         return ResponseEntity.noContent().build();
     }

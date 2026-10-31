@@ -1,10 +1,13 @@
 package com.azure.expensetracker.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +23,7 @@ import com.azure.expensetracker.repository.CategoryRepository;
 import com.azure.expensetracker.repository.ExpenseRepository;
 import com.azure.expensetracker.repository.UserRepository;
 
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -54,16 +58,7 @@ public class ExpenseService {
 
         return mapToExpenseResponse(expense);
     }
-
-    @Transactional(readOnly = true)
-    public List<ExpenseResponse> getAllExpenses() {
-
-        return expenseRepository.findAllByDeletedAtIsNull()
-                .stream()
-                .map(this::mapToExpenseResponse)
-                .toList();
-    }
-
+    
     @Transactional(readOnly = true)
     public Page<ExpenseResponse> getExpensesByUserId(Long userId, Pageable pageable) {
         return expenseRepository.findByUser_IdAndDeletedAtIsNull(userId, pageable)
@@ -105,16 +100,13 @@ public class ExpenseService {
 
     @Transactional(readOnly = true)
     public Page<ExpenseResponse> filterExpenses(
-        Long userId, ExpenseFilterRequest filter, Pageable pageable) {
-        return expenseRepository.findByUserIdAndFilters(
-                userId,
-                filter.categoryId(),
-                filter.startDate(),
-                filter.endDate(),
-                filter.minAmount(),
-                filter.maxAmount(),
-                filter.description(),
-                pageable)
+            Long userId, ExpenseFilterRequest filter, Pageable pageable) {
+
+        validateFilters(userId, filter);
+
+        Specification<Expense> spec = buildExpenseSpecification(userId, filter);
+
+        return expenseRepository.findAll(spec, pageable)
                 .map(this::mapToExpenseResponse);
     }
 
@@ -126,6 +118,80 @@ public class ExpenseService {
     private Category getCategoryById(Long userId, Long categoryId) {
         return categoryRepository.findByIdAndUser_IdAndDeletedAtIsNull(categoryId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + categoryId));
+    }
+
+    private void validateFilters(Long userId, ExpenseFilterRequest filter) {
+        if (filter.startDate() != null
+                && filter.endDate() != null
+                && filter.startDate().isAfter(filter.endDate())) {
+            throw new IllegalArgumentException("Start date cannot be after end date");
+        }
+
+        if (filter.minAmount() != null
+                && filter.maxAmount() != null
+                && filter.minAmount().compareTo(filter.maxAmount()) > 0) {
+            throw new IllegalArgumentException("Minimum amount cannot be greater than maximum amount");
+        }
+
+        if (filter.categoryId() != null) {
+            getCategoryById(userId, filter.categoryId());
+        }
+    }
+
+    private Specification<Expense> buildExpenseSpecification(
+            Long userId,
+            ExpenseFilterRequest filter) {
+
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            predicates.add(cb.equal(root.get("user").get("id"), userId));
+            predicates.add(cb.isNull(root.get("deletedAt")));
+
+            if (filter.categoryId() != null) {
+                predicates.add(
+                        cb.equal(root.get("category").get("id"), filter.categoryId()));
+            }
+
+            if (filter.startDate() != null) {
+                predicates.add(
+                        cb.greaterThanOrEqualTo(
+                                root.get("expenseDate"),
+                                filter.startDate()));
+            }
+
+            if (filter.endDate() != null) {
+                predicates.add(
+                        cb.lessThanOrEqualTo(
+                                root.get("expenseDate"),
+                                filter.endDate()));
+            }
+
+            if (filter.minAmount() != null) {
+                predicates.add(
+                        cb.greaterThanOrEqualTo(
+                                root.get("amount"),
+                                filter.minAmount()));
+            }
+
+            if (filter.maxAmount() != null) {
+                predicates.add(
+                        cb.lessThanOrEqualTo(
+                                root.get("amount"),
+                                filter.maxAmount()));
+            }
+
+            if (filter.description() != null
+                    && !filter.description().isBlank()) {
+
+                predicates.add(
+                        cb.like(
+                                cb.lower(root.get("description")),
+                                "%" + filter.description().toLowerCase(Locale.ROOT) + "%"));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
     }
 
     private ExpenseResponse mapToExpenseResponse(Expense expense) {

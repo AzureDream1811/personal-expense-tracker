@@ -2,6 +2,8 @@ package com.azure.expensetracker.controller;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -71,7 +73,8 @@ public class ExpenseController {
     @GetMapping("/filter")
     public ResponseEntity<Page<ExpenseResponse>> filterExpenses(
             @RequestParam Long userId,
-            @ModelAttribute ExpenseFilterRequest filter, Pageable pageable) {
+            @ModelAttribute ExpenseFilterRequest filter,
+            @PageableDefault(size = 10,sort = "expenseDate", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(expenseService.filterExpenses(userId, filter, pageable));
     }
 

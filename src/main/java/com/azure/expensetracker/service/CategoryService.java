@@ -28,6 +28,11 @@ public class CategoryService {
     public CategoryResponse createCategory(Long userId, CategoryRequest categoryRequest) {
         User user = getUserById(userId);
 
+        if (categoryRepository.existsByUser_IdAndNameAndDeletedAtIsNull(userId, categoryRequest.name())) {
+            throw new DuplicateResourceException(
+                    "Category with name '" + categoryRequest.name() + "' already exists.");
+        }
+
         Category category = Category.builder()
                 .name(categoryRequest.name())
                 .description(categoryRequest.description())
