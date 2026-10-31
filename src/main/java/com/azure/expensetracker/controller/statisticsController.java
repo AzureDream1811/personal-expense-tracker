@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.azure.expensetracker.dto.request.StatisticsEsponseSummaryRequest;
-import com.azure.expensetracker.dto.response.StatisticsEsponseSummaryResponse;
+import com.azure.expensetracker.dto.request.ExpenseSummaryRequest;
+import com.azure.expensetracker.dto.response.ExpenseSummaryResponse;
 import com.azure.expensetracker.service.StatisticsService;
 
 import lombok.RequiredArgsConstructor;
@@ -22,12 +22,12 @@ public class statisticsController {
     private final StatisticsService statisticsService;
 
     @GetMapping("/summary")
-    public ResponseEntity<StatisticsEsponseSummaryResponse> getExpenseSummary(
+    public ResponseEntity<ExpenseSummaryResponse> getExpenseSummary(
             @RequestParam Long userId,
             @RequestParam String startDate,
             @RequestParam String endDate) {
 
-        StatisticsEsponseSummaryRequest request = new StatisticsEsponseSummaryRequest(
+        ExpenseSummaryRequest request = new ExpenseSummaryRequest(
                 LocalDate.parse(startDate), LocalDate.parse(endDate));
 
         return ResponseEntity.ok(

@@ -12,7 +12,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.azure.expensetracker.dto.response.StatisticsEsponseSummaryResponse;
+import com.azure.expensetracker.dto.response.ExpenseSummaryResponse;
 import com.azure.expensetracker.entity.Expense;
 
 public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpecificationExecutor<Expense> {
@@ -45,7 +45,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpec
                                 AND e.expenseDate <= :endDate
                                 AND e.deletedAt IS NULL
                         """)
-        StatisticsEsponseSummaryResponse getExpenseSummary(
+        ExpenseSummaryResponse getExpenseSummary(
                         @Param("userId") Long userId,
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate);
