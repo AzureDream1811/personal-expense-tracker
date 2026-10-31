@@ -58,7 +58,7 @@ public class ExpenseService {
 
         return mapToExpenseResponse(expense);
     }
-    
+
     @Transactional(readOnly = true)
     public Page<ExpenseResponse> getExpensesByUserId(Long userId, Pageable pageable) {
         return expenseRepository.findByUser_IdAndDeletedAtIsNull(userId, pageable)
@@ -145,8 +145,11 @@ public class ExpenseService {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            predicates.add(cb.equal(root.get("user").get("id"), userId));
-            predicates.add(cb.isNull(root.get("deletedAt")));
+            predicates.add(
+                    cb.equal(root.get("user").get("id"), userId));
+
+            predicates.add(
+                    cb.isNull(root.get("deletedAt")));
 
             if (filter.categoryId() != null) {
                 predicates.add(
