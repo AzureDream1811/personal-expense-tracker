@@ -1,219 +1,237 @@
 # Personal Expense Tracker API
 
-A RESTful API built with Java and Spring Boot that allows users to manage expenses, organize spending by category, and analyze monthly expenses.
+A RESTful backend application for managing personal expenses, organizing spending categories, and tracking expense statistics.
 
-## Tech Stack
-
-- **Language:** Java 21
-- **Framework:** Spring Boot 4.x
-- **Database:** PostgreSQL 17
-- **ORM:** Spring Data JPA / Hibernate
-- **Build Tool:** Gradle
-- **Database Environment:** Docker Compose
-- **Validation:** Jakarta Bean Validation
-- **Boilerplate Reduction:** Project Lombok
-- **Testing:** JUnit 5, Mockito, Spring Boot Test
+Built with Java and Spring Boot, this project demonstrates backend development practices including JWT authentication, role-independent user data isolation, database migrations, pagination, dynamic filtering, and automated testing.
 
 ## Features
 
-- **Expense Management:** Create, retrieve, update, and delete expenses.
-- **Category Management:** Organize expenses into categories such as food, transportation, and entertainment.
-- **Filtering:** Filter expenses by category and date range.
-- **Pagination and Sorting:** Retrieve expense records efficiently.
-- **Expense Statistics:** Calculate total spending by category and month.
-- **Input Validation:** Validate incoming requests and reject invalid expense data.
-- **Exception Handling:** Return consistent error responses for failed operations.
-- **Automated Testing:** Test business logic, validation, and API behavior.
+### Authentication & Authorization
 
-## Prerequisites
+- User registration and login
+- Password hashing using BCrypt
+- JWT-based authentication
+- Stateless session management
+- Protected API endpoints
+- Authenticated user identification through JWT
 
-Install the following tools before running the application:
+### User Management
 
-- **JDK 21:** Required to compile and run the application.
-- **Docker Desktop** or Docker Engine with the Docker Compose plugin: Runs PostgreSQL in a container.
-- **Git:** Used to clone the repository.
+- User registration
+- User-specific data access
+- Soft deletion
 
-Gradle does not need to be installed globally because the project uses the Gradle Wrapper.
+### Category Management
 
-Verify your installations:
+- Create, retrieve, update, and delete categories
+- User-specific categories
+- Soft deletion
+- Category ownership validation
 
-```bash
-java -version
-git --version
-docker --version
-docker compose version
-```
+### Expense Management
 
-## Dependencies
+- Create, retrieve, update, and delete expenses
+- Associate expenses with categories
+- User-specific expense records
+- Soft deletion
+- Expense filtering by:
+  - Date range
+  - Amount range
+  - Category
+  - Description
+- Pagination and sorting
 
-The project uses the following main dependencies:
+### Expense Statistics
 
-| Dependency                            | Purpose                                   |
-| ------------------------------------- | ----------------------------------------- |
-| `spring-boot-starter-webmvc`          | Build REST APIs using Spring MVC          |
-| `spring-boot-starter-data-jpa`        | Database access through JPA and Hibernate |
-| `spring-boot-starter-validation`      | Validate request data                     |
-| `postgresql`                          | Connect to PostgreSQL                     |
-| `lombok`                              | Reduce repetitive Java code               |
-| `spring-boot-starter-test`            | General testing support                   |
-| `spring-boot-starter-data-jpa-test`   | Test JPA-related functionality            |
-| `spring-boot-starter-validation-test` | Test validation behavior                  |
-| `spring-boot-starter-webmvc-test`     | Test Spring MVC controllers               |
-| `junit-platform-launcher`             | Support JUnit Platform test execution     |
+- Total expense amount
+- Number of expenses
+- Average expense amount
+- Expense breakdown by category
+- Date-range-based statistics
 
-Dependencies and compatible versions are managed through the Spring Boot Gradle plugin and dependency management.
+### Engineering Practices
+
+- DTO-based request and response handling
+- Bean Validation
+- Global exception handling
+- Transaction management
+- JPA EntityGraph to help prevent N+1 queries
+- Dynamic queries using Spring Data JPA Specifications
+- Database version control with Flyway
+- Automated tests
+- Docker Compose environment
+
+## Technology Stack
+
+| Technology          | Purpose                          |
+| ------------------- | -------------------------------- |
+| Java 21             | Programming language             |
+| Spring Boot 4.1.2   | Backend framework                |
+| Spring Web MVC      | REST API development             |
+| Spring Data JPA     | Database persistence             |
+| Spring Security     | Authentication and authorization |
+| JWT                 | Stateless authentication         |
+| BCrypt              | Password hashing                 |
+| PostgreSQL          | Relational database              |
+| Hibernate           | ORM                              |
+| Flyway              | Database migrations              |
+| Gradle              | Build automation                 |
+| Docker Compose      | Container orchestration          |
+| JUnit / Spring Test | Automated testing                |
 
 ## Project Structure
 
 ```text
-expense-tracker/
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── com/example/expensetracker/
-│   │   │       ├── controller/
-│   │   │       ├── service/
-│   │   │       ├── repository/
-│   │   │       ├── entity/
-│   │   │       ├── dto/
-│   │   │       ├── exception/
-│   │   │       └── ExpenseTrackerApplication.java
-│   │   └── resources/
-│   │       └── application.properties
-│   └── test/
-├── compose.yaml
-├── .env.example
-├── .gitignore
-├── build.gradle
-├── settings.gradle
-├── gradlew
-├── gradlew.bat
-└── README.md
+src/
+├── main/
+│   ├── java/com/azure/expensetracker/
+│   │   ├── config/
+│   │   ├── controller/
+│   │   ├── dto/
+│   │   │   ├── request/
+│   │   │   └── response/
+│   │   ├── entity/
+│   │   ├── exception/
+│   │   ├── repository/
+│   │   ├── security/
+│   │   └── service/
+│   │
+│   └── resources/
+│       ├── db/
+│       │   ├── migration/
+│       │   └── mock-data/
+│       └── application.properties/
+│
+└── test/
+    └── java/
 ```
 
-The package structure is a proposed layout and may change as the application develops.
+## Database Design
 
-## Configuration
+The application uses PostgreSQL with three main entities:
 
-### 1. Create the environment file
+- **User:** Stores user account information.
+- **Category:** Stores expense categories and their owners.
+- **Expense:** Stores individual expense records, associated with a user and category.
+
+### Entity Relationships
+
+```text
+User
+ ├── 1:N Categories
+ └── 1:N Expenses
+
+Category
+ ├── N:1 User
+ └── 1:N Expenses
+
+Expense
+ ├── N:1 User
+ └── N:1 Category
+```
+
+### Data Integrity
+
+- Each category belongs to a user.
+- Each expense belongs to a user.
+- An expense can only reference a category owned by the same user.
+- Soft-deleted records are excluded from normal retrieval operations.
+- User-specific queries prevent access to other users' data.
+
+## Authentication Flow
+
+1. A user registers with an email, username, and password.
+2. The application hashes the password using BCrypt.
+3. The user logs in with their credentials.
+4. The application verifies the password.
+5. A JWT access token is generated.
+6. The client includes the token in subsequent protected requests.
+7. Spring Security validates the token.
+8. The authenticated user ID is extracted from the JWT subject.
+
+Protected endpoints use the following HTTP header:
+
+```http
+Authorization: Bearer <access_token>
+```
+
+## API Documentation
+
+Interactive API documentation is provided through Swagger UI.
+
+After starting the application, visit:
+
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+
+The API includes endpoints for:
+
+| Resource           | Operations                                       |
+| ------------------ | ------------------------------------------------ |
+| Authentication     | Register, Login                                  |
+| Categories         | Create, Retrieve, Update, Delete                 |
+| Expenses           | Create, Retrieve, Update, Delete                 |
+| Expense Filtering  | Filter by date, amount, category and description |
+| Expense Statistics | Summary and category breakdown                   |
+
+Refer to Swagger UI for the complete endpoint paths, request schemas, response schemas, and authentication requirements.
+
+## Environment Configuration
+
+The application uses environment variables to keep sensitive configuration outside the source code.
 
 Create a `.env` file in the project root.
 
-Use the following configuration:
-
-```dotenv
-DB_NAME=expense_tracker
-DB_USERNAME=expense_user
-DB_PASSWORD=change_me_for_local_development
-POSTGRES_PORT=5432
-DB_URL=jdbc:postgresql://localhost:5432/expense_tracker
-```
-
-These values are for local development. Change the password to your preferred development credential.
-
-Create a `.env.example` file containing the same variable names and example values. Commit `.env.example` to Git, but never commit your actual `.env` file or production credentials.
-
-### 2. Configure PostgreSQL with Docker Compose
-
-The `compose.yaml` file defines the PostgreSQL service.
-
-```yaml
-services:
-  postgres:
-    image: postgres:17
-    container_name: expense-tracker-db
-    restart: unless-stopped
-
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-
-    volumes:
-      - expense_tracker_data:/var/lib/postgresql/data
-
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  expense_tracker_data:
-```
-
-Docker Compose reads the `.env` file to substitute the configuration variables.
-
-The named volume preserves database data when the container stops or is recreated.
-
-### 3. Configure Spring Boot
-
-Update `src/main/resources/application.properties`:
+Example:
 
 ```properties
-spring.application.name=expense-tracker
-
-spring.config.import=optional:file:.env[.properties]
-
-spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/expense_tracker}
-spring.datasource.username=${DB_USERNAME:expense_user}
-spring.datasource.password=${DB_PASSWORD:change_me_for_local_development}
-spring.datasource.driver-class-name=org.postgresql.Driver
-
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-spring.jpa.open-in-view=false
+DB_URL=jdbc:postgresql://localhost:5432/expense_tracker
+DB_USERNAME=expense_user
+DB_PASSWORD=your_database_password
+JWT_SECRET=your_base64_encoded_jwt_secret
 ```
 
-Spring Boot imports the local `.env` file as properties. The fallback values allow the application to start with default local configuration when the corresponding properties are not supplied elsewhere.
+Do not commit `.env` to version control.
 
-**Note:** `spring.jpa.hibernate.ddl-auto=update` is intended for development. Consider using Flyway or Liquibase for schema migrations as the project matures.
+Use `.env.example` as a template for other developers.
 
-## How to Run
+## Running the Application
+
+### Prerequisites
+
+- Java 21
+- Docker
+- Docker Compose
+- Git
 
 ### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
-cd expense-tracker
+git clone <your-repository-url>
+cd personal-expense-tracker
 ```
 
-Replace `<repository-url>` with the actual repository URL.
+### 2. Configure environment variables
 
-### 2. Configure the environment
+Create your `.env` file using the configuration above.
 
-Create `.env` in the project root using the configuration described above.
-
-Make sure `.env` contains the same database name, username, and password used by Docker Compose and Spring Boot.
-
-### 3. Start PostgreSQL
-
-Run:
+### 3. Start Docker Compose
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
-Check the container status:
+This starts the services defined in your Docker Compose configuration.
+
+### 4. Run the application
+
+If your Compose configuration already starts the Spring Boot application, wait for the application container to become healthy.
+
+Otherwise, run it locally:
 
 ```bash
-docker compose ps
+./gradlew bootRun
 ```
-
-View database logs if necessary:
-
-```bash
-docker compose logs postgres
-```
-
-Wait until PostgreSQL is healthy before starting the application.
-
-### 4. Start Spring Boot
 
 On Windows:
 
@@ -221,83 +239,71 @@ On Windows:
 .\gradlew.bat bootRun
 ```
 
-On Linux or macOS:
+### 5. Access the API
 
-```bash
-./gradlew bootRun
-```
-
-The application should start at:
+Open Swagger UI:
 
 ```text
-http://localhost:8080
+http://localhost:8080/swagger-ui.html
 ```
 
-### 5. Test the application
+Flyway automatically applies pending database migrations when the application starts.
 
-Use Postman or another HTTP client to test the implemented API endpoints.
+## Running Tests
 
-Example endpoints planned for the application:
+Run the automated test suite using Gradle:
 
-| Method | Endpoint                           | Description                          |
-| ------ | ---------------------------------- | ------------------------------------ |
-| POST   | `/api/expenses`                    | Create an expense                    |
-| GET    | `/api/expenses`                    | Retrieve expenses                    |
-| GET    | `/api/expenses/{id}`               | Retrieve an expense by ID            |
-| PUT    | `/api/expenses/{id}`               | Update an expense                    |
-| DELETE | `/api/expenses/{id}`               | Delete an expense                    |
-| GET    | `/api/expenses/statistics/monthly` | Retrieve monthly spending statistics |
-
-These endpoints will become available as their corresponding controllers and business logic are implemented.
-
-## Testing
-
-Run the test suite using the Gradle Wrapper.
-
-**Windows:**
-
-```powershell
-.\gradlew.bat test
-```
-
-**Linux / macOS:**
+Linux / macOS:
 
 ```bash
 ./gradlew test
 ```
 
-## Stopping the Environment
+Windows:
 
-Stop PostgreSQL without removing the container:
-
-```bash
-docker compose stop
+```powershell
+.\gradlew.bat test
 ```
 
-Start it again later:
+## Design Decisions
 
-```bash
-docker compose start
-```
+### JWT Authentication
 
-Alternatively, remove the container while retaining the database volume:
+JWT provides stateless authentication. The authenticated user's ID is derived from the token rather than accepting a user ID from client-controlled request parameters.
 
-```bash
-docker compose down
-```
+### Soft Deletion
 
-Avoid `docker compose down -v` unless you intentionally want to delete the database volume and its data.
+Records are marked as deleted instead of being physically removed. This preserves historical data and relationships.
+
+### DTO Pattern
+
+Request and response DTOs separate API contracts from database entities, preventing direct exposure of persistence models.
+
+### Dynamic Filtering
+
+Spring Data JPA Specifications allow optional filters to be combined dynamically without creating a large number of repository methods.
+
+### Transaction Management
+
+Service-layer transactions maintain consistent database operations and allow response mapping while required lazy-loaded relationships are available.
+
+### Database Migrations
+
+Flyway manages schema changes through versioned SQL migration scripts, making database evolution reproducible.
 
 ## Future Improvements
 
-- Add JWT-based authentication and authorization.
-- Introduce Flyway for database migrations.
-- Containerize the Spring Boot application.
-- Add Docker Compose profiles for development and testing.
-- Add OpenAPI / Swagger documentation.
-- Implement CI workflows for automated testing.
-- Introduce Redis if caching becomes useful.
+Potential extensions include:
+
+- Refresh token mechanism
+- Email verification and password recovery
+- Monthly and yearly financial reports
+- Budget management
+- Recurring expenses
+- Expense export (CSV / PDF)
+- Frontend application
+- Production deployment and monitoring
 
 ## License
 
-This project is intended for educational and portfolio purposes.
+This project is developed for educational and portfolio purposes. Add a license if you intend to distribute or reuse the project publicly.
