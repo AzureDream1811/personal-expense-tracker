@@ -1,9 +1,11 @@
 package com.azure.expensetracker.service;
 
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.azure.expensetracker.dto.request.LoginRequest;
 import com.azure.expensetracker.dto.request.RegisterRequest;
 import com.azure.expensetracker.dto.response.UserResponse;
 import com.azure.expensetracker.entity.User;
@@ -43,11 +45,22 @@ public class UserService {
         return mapToResponse(savedUser);
     }
 
+    @Transactional(readOnly = true)
+    public User authenticate(LoginRequest request) {
+        User user = userRepository.findByEmailAndDeletedAtIsNull(request.email())
+                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
+
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new BadCredentialsException("Invalid email or password");
+        }
+
+        return user;
+    }
+
     private UserResponse mapToResponse(User user) {
         return new UserResponse(
-            user.getId(),
-            user.getUsername(),
-            user.getEmail()
-        );
+                user.getId(),
+                user.getUsername(),
+                user.getEmail());
     }
 }
