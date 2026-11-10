@@ -12,6 +12,7 @@ import com.azure.expensetracker.dto.request.RegisterRequest;
 import com.azure.expensetracker.dto.response.LoginResponse;
 import com.azure.expensetracker.dto.response.UserResponse;
 import com.azure.expensetracker.entity.User;
+import com.azure.expensetracker.security.CurrentUser;
 import com.azure.expensetracker.service.JwtService;
 import com.azure.expensetracker.service.UserService;
 
@@ -25,6 +26,7 @@ public class AuthController {
 
     private final UserService userService;
     private final JwtService jwtService;
+    private final CurrentUser currentUser;
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(
@@ -44,5 +46,11 @@ public class AuthController {
 
         return ResponseEntity.ok(loginResponse);
     }
+
+    @PostMapping("/me")
+    public ResponseEntity<Long> getCurrentUserId() {
+        return ResponseEntity.ok(currentUser.getId());
+    }
+    
 
 }
